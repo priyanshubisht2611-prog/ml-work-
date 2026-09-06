@@ -56,3 +56,14 @@ def git_sha() -> str:
         ).strip()
     except Exception:
         return "nogit"
+
+
+def log_run(row: dict) -> None:
+    RUN_LOG.parent.mkdir(parents=True, exist_ok=True)
+    is_new = not RUN_LOG.exists()
+    with RUN_LOG.open("a", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=LOG_FIELDS)
+        if is_new:
+            writer.writeheader()
+        writer.writerow({k: row.get(k, "") for k in LOG_FIELDS})
+    print(f"logged run -> {RUN_LOG}")
