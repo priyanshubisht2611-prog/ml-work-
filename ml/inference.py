@@ -137,3 +137,41 @@ def run_inference(file_path: str, config: dict | None = None,
     validate_result(result)   # never hand the backend an off-contract payload
     report("stored", 100)
     return result
+
+
+def _clip_to_image(dets: list[dict], width: int, height: int) -> list[dict]:
+    """Tiles are zero-padded at the right/bottom edge, so a box can land in the
+    padding. Clip it back and drop anything that collapses."""
+    out = []
+    for d in dets:
+        x, y, w, h = d["bbox"]
+        x = max(0.0, min(x, width - 1.0))
+        y = max(0.0, min(y, height - 1.0))
+        w = min(w, width - x)
+        h = min(h, height - y)
+        if w > 1 and h > 1:
+            out.append({**d, "bbox": [round(x, 1), round(y, 1), round(w, 1), round(h, 1)]})
+    return out
+
+
+def _write_overlay(image: np.ndarray, dets: list[dict], image_id: str,
+                   out_dir: Path) -> str:
+    from PIL import Image, ImageDraw
+
+    colours = {
+        "tyre": (255, 87, 51), "drum": (255, 189, 51), "net": (51, 214, 255),
+        "plastic_debris": (162, 89, 255), "wreck": (255, 51, 153),
+        "unidentified": (160, 160, 160),
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    canvas = Image.fromarray(image).convert("RGB")
+    draw = ImageDraw.Draw(canvas)
+    for d in dets:
+        x, y, w, h = d["bbox"]
+        colour = colours.get(d["class"], (255, 255, 255))
+        draw.rectangle([x, y, x + w, y + h], outline=colour, width=2)
+        draw.text((x + 2, max(0, y - 11)),
+                  f"{d['class']} {d['confidence']:.2f}", fill=colour)
+    path = out_dir / f"{image_id}_overlay.png"
+    canvas.save(path)
+    return str(path)
