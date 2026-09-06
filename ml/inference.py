@@ -175,3 +175,31 @@ def _write_overlay(image: np.ndarray, dets: list[dict], image_id: str,
     path = out_dir / f"{image_id}_overlay.png"
     canvas.save(path)
     return str(path)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Run the PS57 detection pipeline")
+    ap.add_argument("file")
+    ap.add_argument("--weights", default=None)
+    ap.add_argument("--conf", type=float, default=None)
+    ap.add_argument("--out", default=None, help="write result JSON here")
+    args = ap.parse_args()
+
+    overrides = {}
+    if args.weights:
+        overrides["weights"] = args.weights
+    if args.conf is not None:
+        overrides["conf_threshold"] = args.conf
+
+    result = run_inference(args.file, overrides,
+                           progress_cb=lambda s, p: print(f"[{p:3d}%] {s}"))
+    text = json.dumps(result, indent=2)
+    if args.out:
+        Path(args.out).write_text(text)
+        print(f"wrote {args.out}  ({len(result['detections'])} detections)")
+    else:
+        print(text)
+
+
+if __name__ == "__main__":
+    main()
