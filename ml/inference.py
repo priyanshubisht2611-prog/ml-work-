@@ -37,9 +37,22 @@ _CONFIG_PATH = Path(__file__).resolve().parent.parent / "configs" / "inference.y
 _DETECTOR: Detector | None = None
 
 
+# Shipped weights, used when no config or env var overrides them. Without this
+# the pipeline silently fell back to mock detections, which is the worst
+# possible default: the backend gets well-formed JSON full of invented objects
+# and nothing anywhere says it is fake.
+_DEFAULT_WEIGHTS = Path(__file__).resolve().parent.parent / "weights" / "sidescan_v1.pt"
+
+
 def load_config(path: str | Path | None = None) -> dict:
     cfg_path = Path(path) if path else _CONFIG_PATH
     cfg = yaml.safe_load(cfg_path.read_text()) if cfg_path.exists() else {}
+    # Fall back to the shipped weights when none are configured OR when the
+    # configured path does not exist - a stale path in a config file is the
+    # usual way this ends up silently mocking.
+    configured = cfg.get("weights")
+    if (not configured or not Path(configured).exists()) and _DEFAULT_WEIGHTS.exists():
+        cfg["weights"] = str(_DEFAULT_WEIGHTS)
     # env overrides let the backend container point at its own paths
     if os.getenv("SIH_ML_WEIGHTS"):
         cfg["weights"] = os.environ["SIH_ML_WEIGHTS"]

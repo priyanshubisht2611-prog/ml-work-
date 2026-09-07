@@ -14,6 +14,29 @@ import numpy as np
 
 from ml.contract import CLASSES, INPUT_IMAGE_SIZE
 
+# A model's own class names are whatever its training set used; the contract
+# fixes what the backend is allowed to receive. Mapping by NAME, never by
+# index - the index of "ship" in one model is the index of something else
+# entirely in the contract, and mapping by index silently relabels every
+# detection. Anything unmapped becomes "unidentified", which is the honest
+# answer for a class the contract has no word for.
+NAME_TO_CONTRACT = {
+    # sidescan_v1 (SCTD)
+    "ship": "wreck", "aircraft": "wreck", "human": "unidentified",
+    # debris_fls_v1 (Marine Debris FLS)
+    "tire": "tyre", "tyre": "tyre",
+    "bottle": "plastic_debris", "standing-bottle": "plastic_debris",
+    "shampoo-bottle": "plastic_debris", "drink-carton": "plastic_debris",
+    "can": "plastic_debris",
+    "chain": "net", "hook": "net",
+    "valve": "unidentified", "propeller": "unidentified",
+}
+
+
+def to_contract_class(name: str) -> str:
+    """Map a model's own label onto the frozen contract vocabulary."""
+    return NAME_TO_CONTRACT.get(name.lower().strip(), "unidentified")
+
 
 class Detector:
     """Wraps whatever backend actually runs the model."""
@@ -28,6 +51,19 @@ class Detector:
         self._kind = "mock"
         if weights and Path(weights).exists():
             self._load(Path(weights))
+        else:
+            # Mock mode is for unblocking the backend before a model exists.
+            # It must never be reached silently: well-formed JSON describing
+            # objects that were never detected is worse than a hard failure,
+            # because it looks like a working integration.
+            import warnings
+            warnings.warn(
+                f"Detector running in MOCK mode - detections are INVENTED. "
+                f"weights={weights!r} "
+                f"({'missing' if weights else 'not configured'}). "
+                f"Set SIH_ML_WEIGHTS or pass a real checkpoint.",
+                RuntimeWarning, stacklevel=2,
+            )
 
     @property
     def kind(self) -> str:
@@ -68,7 +104,8 @@ class Detector:
                 x1, y1, x2, y2 = [float(v) for v in box.xyxy[0].tolist()]
                 dets.append(
                     {
-                        "class": CLASSES[int(box.cls[0])],
+                        "class": to_contract_class(
+                            self._impl.names[int(box.cls[0])]),
                         "confidence": round(float(box.conf[0]), 4),
                         "bbox": [x1, y1, x2 - x1, y2 - y1],
                     }
