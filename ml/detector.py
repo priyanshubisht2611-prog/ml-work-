@@ -23,6 +23,9 @@ from ml.contract import CLASSES, INPUT_IMAGE_SIZE
 NAME_TO_CONTRACT = {
     # sidescan_v1 (SCTD)
     "ship": "wreck", "aircraft": "wreck", "human": "unidentified",
+    # ghostgear_v1 (Ghost Pot SSS) - a derelict crab pot is lost
+    # fishing gear, which is what the contract's "net" class covers
+    "crab_pot": "net",
     # debris_fls_v1 (Marine Debris FLS)
     "tire": "tyre", "tyre": "tyre",
     "bottle": "plastic_debris", "standing-bottle": "plastic_debris",
