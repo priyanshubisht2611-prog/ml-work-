@@ -1,0 +1,33 @@
+# datasets and checkpoints live on the shared Drive, never in git
+data/dataset_*/
+data/uploads/
+data/overlays/
+data/tiles/
+samples/*.png
+*.pt
+*.onnx
+*.h5
+*.pkl
+runs/*
+!runs/RUN_LOG.csv
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# node
+node_modules/
+dist/
+.vite/
+
+# env and editors
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
+out/
