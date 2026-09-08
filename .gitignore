@@ -1,17 +1,22 @@
-# datasets and checkpoints live on the shared Drive, never in git
+# Project-specific ignores
+# Datasets and checkpoints (stored on shared Drive, never in git)
 data/dataset_*/
 data/uploads/
 data/overlays/
 data/tiles/
+
+# Sample images and model files
 samples/*.png
 *.pt
 *.onnx
 *.h5
 *.pkl
+
+# Run logs (keep CSV but ignore other files)
 runs/*
 !runs/RUN_LOG.csv
 
-# python
+# Python artifacts
 __pycache__/
 *.py[cod]
 .venv/
@@ -19,15 +24,25 @@ venv/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# node
+# Node and build artifacts
 node_modules/
-dist/
-.vite/
+.next/
+out/
 
-# env and editors
-.env
-.env.*
-.DS_Store
+# Environment files
+.env*.local
+
+# IDE/editor files
 .idea/
 .vscode/
-out/
+
+# OS files
+.DS_Store
+
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+.vercel/
